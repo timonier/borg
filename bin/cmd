@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e -u
+
+_fail() {
+    echo 1>&2 "$1"
+    exit 255
+}
+
+if [ "$(uname)" == "Darwin" ]; then
+    exec docker run $(compgen -A variable | grep -E -v "^(HOME|JAVA_HOME|LOGNAME|OLDPWD|PATH|SHELL|TMPDIR|USER)$" | awk "{print \"--env\", \$1}") --init --interactive --mount "dst=${HOME},src=timonier-borg-home,type=volume,volume-driver=local,volume-opt=device=:${HOME},volume-opt=type=nfs,\"volume-opt=o=addr=host.docker.internal,hard,nfsvers=3,nointr,nolock,rw\"" --mount "dst=/root,src=timonier-borg-root,type=volume,volume-driver=local,volume-opt=device=:${HOME},volume-opt=type=nfs,\"volume-opt=o=addr=host.docker.internal,hard,nfsvers=3,nointr,nolock,rw\"" --net host --rm --tty="$([ -t 0 ] && echo "true" || echo "false")" --workdir "${PWD}" "${IMAGE:-timonier/borg}":"${TAG:-latest}" "$(basename "$0")" "$@"
+fi
+
+if [ "$(uname)" == "Linux" ]; then
+    exec docker run $(compgen -A variable | grep -v "^(PATH)$" | awk "{print \"--env\", \$1}") --init --interactive --net host --rm --tty="$([ -t 0 ] && echo "true" || echo "false")" --volume /etc/group:/etc/group:ro --volume /etc/localtime:/etc/localtime:ro --volume /etc/passwd:/etc/passwd:ro --volume /etc/timezone:/etc/timezone:ro --volume "${HOME}":"${HOME}" --volume "${PWD}":"${PWD}" --workdir "${PWD}" "${IMAGE:-timonier/borg}":"${TAG:-latest}" "$(basename "$0")" "$@"
+fi
+
+_fail "Current OS is not supported."

@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e -u -x
+cd "$(dirname "$0")"/../src
+
+docker build --pull --tag "${IMAGE:-timonier/borg}":"${TAG:-latest}" .

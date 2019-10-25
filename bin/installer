@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e -u -x
+cd "$(dirname "$0")"
+
+# Check environment
+
+_fail() {
+    echo 1>&2 "$1"
+    echo 1>&2 "Usage: $(basename "$0") [install|uninstall]"
+    exit 255
+}
+
+if [ "$#" -lt 1 ]; then
+    _fail "Invalid number of arguments."
+fi
+
+# Run installer
+
+INSTALL_DIRECTORY="${INSTALL_DIRECTORY:-/usr/local/bin}"
+
+case "$1" in
+    install)
+        mkdir -p "${INSTALL_DIRECTORY}"
+
+        if [ -t 0 ]; then
+            cp cmd "${INSTALL_DIRECTORY}"/borg
+            cp cmd "${INSTALL_DIRECTORY}"/borgmatic
+        else
+            curl --location --output "${INSTALL_DIRECTORY}"/borg "https://gitlab.com/timonier/borg/raw/master/bin/cmd"
+            curl --location --output "${INSTALL_DIRECTORY}"/borgmatic "https://gitlab.com/timonier/borg/raw/master/bin/cmd"
+        fi
+
+        chmod +x "${INSTALL_DIRECTORY}"/borg
+        chmod +x "${INSTALL_DIRECTORY}"/borgmatic
+        ;;
+
+    uninstall)
+        rm -f "${INSTALL_DIRECTORY}"/borg
+        rm -f "${INSTALL_DIRECTORY}"/borgmatic
+        ;;
+
+    *)
+        _fail "Argument \"$1\" is invalid."
+        ;;
+esac
